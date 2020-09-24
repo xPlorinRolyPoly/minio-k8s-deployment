@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio-gateway-azure
+  labels:
+    app: minio-gateway-azure
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio-gateway-azure
+  template:
+    metadata:
+      labels:
+        app: minio-gateway-azure
+    spec:
+      containers:
+      - name: minio-gateway-azure
+        image: "minio/minio"
+        imagePullPolicy: IfNotPresent
+        command: ["minio", "gateway", "azure"]
+        envFrom:
+        - secretRef:
+              name: minio-gateway-azure
+        ports:
+        - name: http
+          containerPort: 9000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-gateway-azure-svc
+  labels:
+    app: minio-gateway-azure
+spec:
+  ports:
+  - name: http
+    port: 9000
+    targetPort: 9000
+  selector:
+    app: minio-gateway-azure
