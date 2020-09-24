@@ -1,0 +1,1 @@
+# minio-k8s-deployment
