@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio-gateway-gcs
+  labels:
+    app: minio-gateway-gcs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio-gateway-gcs
+  template:
+    metadata:
+      labels:
+        app: minio-gateway-gcs
+    spec:
+      volumes:
+      - name: minio-gateway-gcs-cred
+        secret:
+            secretName: minio-gateway-gcs
+            items:
+              - key: GOOGLE_APPLICATION_CREDENTIALS_JSON
+                path: credentials
+      containers:
+      - name: minio-gateway-gcs
+        image: "minio/minio"
+        imagePullPolicy: IfNotPresent
+        command: ["minio", "gateway", "gcs", "sap-cx-faros-integration"]
+        env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /etc/minio/credentials
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+                name: minio-gateway-gcs
+                key: MINIO_ACCESS_KEY
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+                name: minio-gateway-gcs
+                key: MINIO_SECRET_KEY
+        volumeMounts:
+        - name: minio-gateway-gcs-cred
+          mountPath: /etc/minio
+          readOnly: true
+        ports:
+        - name: http
+          containerPort: 9000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-gateway-gcs-svc
+  labels:
+    app: minio-gateway-gcs
+spec:
+  ports:
+  - name: http
+    port: 9000
+    targetPort: 9000
+  selector:
+    app: minio-gateway-gcs
